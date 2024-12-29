@@ -1,9 +1,15 @@
-import transformers
+import sys
 import os
+
+sys.path.append(os.path.abspath('/home/onyxia/work/RAG/data'))
+
+
+import transformers
 import torch
 from model_pipeline import ModelLoader
 from dataloaders import pdf_loader
 from transformers import AutoTokenizer
+from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.llms import HuggingFacePipeline
 from langchain_core.output_parsers import StrOutputParser
 from langchain_community.vectorstores import FAISS
@@ -12,10 +18,21 @@ from langchain.chains import RetrievalQA
 from langchain.prompts import PromptTemplate
 
 
-current_directory = os.getcwd()
-cv_file_path = os.path.join(current_directory, "CV RAZIG_Ilias_en.pdf")
+current_directory = os.path.dirname(os.path.abspath(__file__))
+parent_dir = os.path.dirname(current_directory)
+data_directory = os.path.join(parent_dir, "data")
+cv_file_path = os.path.join(data_directory, "CV RAZIG_Ilias_en.pdf")
 cv = pdf_loader(cv_file_path)
-vectorstore = FAISS.load_local("faiss_index", huggingface_embeddings)
+
+# We load the langchain embedding model that is on hugging face
+huggingface_embeddings = HuggingFaceEmbeddings(
+    model_name="sentence-transformers/all-MiniLM-L6-v2",
+    model_kwargs={'device':'cuda'},
+    # model_kwargs={'device':'cpu'} if you don't have a gpu
+    encode_kwargs={'normalize_embeddings': True}
+)
+
+vectorstore = FAISS.load_local("faiss_index", huggingface_embeddings, allow_dangerous_deserialization=True)
 
 model_name = "meta-llama/Llama-2-7b-chat-hf"
 loader = ModelLoader(model_name)
