@@ -5,9 +5,9 @@ from langchain_community.document_loaders import JSONLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 
 
-current_directory = os.getcwd()
-json_file_path = os.path.join(current_directory, "api_response.json")
-cv_file_path = os.path.join(current_directory, "CV RAZIG_Ilias_en.pdf")
+data_directory = os.path.dirname(os.path.abspath(__file__))
+json_file_path = os.path.join(data_directory, "api_response.json")
+cv_file_path = os.path.join(data_directory, "CV RAZIG_Ilias_en.pdf")
 
 with open(json_file_path, 'r') as j:
     data = json.loads(j.read())
