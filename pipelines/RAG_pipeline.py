@@ -48,7 +48,7 @@ pipeline = loader.load_pipeline()
 
 
 # Use similarity searching algorithm and return 3 most relevant documents.
-retriever = vectorstore.as_retriever(search_type="similarity", search_kwargs={"k": 3})
+retriever = vectorstore.as_retriever(search_type="similarity", search_kwargs={"k": 2})
 
 template = """
 Tu es un expert du recrutement. Un candidat a fourni son CV suivant :
@@ -57,7 +57,6 @@ Tu es un expert du recrutement. Un candidat a fourni son CV suivant :
 Voici des offres d'emploi avec leur description et leur identifiant :
 {context}
 
-Utilise le CV et le contexte pour répondre à la question suivante.
 {question}
 """
 
@@ -77,5 +76,5 @@ rag_chain = (
     | llm
 )
 
-test = rag_chain.invoke("Parmi les offres ci-dessus, quelle est l'offre qui correspond le mieux au CV du candidat ?")
+test = rag_chain.invoke("Quelle est la meilleure offre d'emploi pour ce candidat ? Je souhaite que tu me donnes l'ID de l'offre, une explication de ton choix et si possible l'url de l'offre")
 print(test)
