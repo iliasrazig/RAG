@@ -2,6 +2,7 @@ import os
 import transformers
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
+from transformers import GenerationConfig
 
 class ModelLoader:
     def __init__(self, model_name, save_dir="models"):
@@ -32,22 +33,28 @@ class ModelLoader:
             """
 
         # Create the pipeline
+
+        generation_config = GenerationConfig(
+        min_new_tokens=50,
+        max_new_tokens = 500,)
+
         pipeline = transformers.pipeline(
-            "text-generation",
+            task="text-generation",
             model=model,
             tokenizer=tokenizer,
             torch_dtype=torch.float16,
-            device_map="cuda",
-        )
+            device_map="cpu",
+            generation_config=generation_config)
 
         return pipeline
 
 # Example usage
 if __name__ == "__main__":
-    model_name = "meta-llama/Llama-2-7b-chat-hf"
+    #model_name = "meta-llama/Llama-2-7b-chat-hf"
+    model_name = "meta-llama/Llama-3.2-3B-Instruct"
     loader = ModelLoader(model_name)
     pipeline = loader.load_pipeline()
 
     # Use the pipeline
-    output = pipeline("Once upon a time,")[0]["generated_text"]
+    output = pipeline("Que peux-tu dire sur le RAG ?")[0]["generated_text"]
     print(output)
