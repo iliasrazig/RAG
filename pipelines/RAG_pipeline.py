@@ -8,6 +8,8 @@ import transformers
 import torch
 from model_pipeline import ModelLoader
 from dataloaders import pdf_loader
+from dataloaders import format_docs
+from vector_DB_creation import vector_DB
 from transformers import AutoTokenizer
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.llms import HuggingFacePipeline
@@ -17,6 +19,7 @@ from langchain_core.runnables import RunnablePassthrough, RunnableLambda
 from langchain.chains import RetrievalQA
 from langchain.prompts import PromptTemplate
 
+torch.cuda.reset_peak_memory_stats()
 
 current_directory = os.path.dirname(os.path.abspath(__file__))
 parent_dir = os.path.dirname(current_directory)
@@ -32,7 +35,11 @@ huggingface_embeddings = HuggingFaceEmbeddings(
     encode_kwargs={'normalize_embeddings': True}
 )
 
-vectorstore = FAISS.load_local("faiss_index", huggingface_embeddings, allow_dangerous_deserialization=True)
+db_loader = vector_DB("vector_DB", data_directory)
+try :
+    vectorstore = db_loader.load_vector_DB(huggingface_embeddings)
+except :
+    vectorstore = db_loader.create_vector_DB("api_response.json",huggingface_embeddings)
 
 model_name = "meta-llama/Llama-2-7b-chat-hf"
 loader = ModelLoader(model_name)
@@ -47,7 +54,7 @@ template = """
 Tu es un expert du recrutement. Un candidat a fourni son CV suivant :
 {cv_text}
 
-Voici des offres d'emploi avec leur description, leur identifiant et d'autres informations disponibles :
+Voici des offres d'emploi avec leur description et leur identifiant :
 {context}
 
 Utilise le CV et le contexte pour répondre à la question suivante.
@@ -70,5 +77,5 @@ rag_chain = (
     | llm
 )
 
-test = rag_chain.invoke("Quelle est la meilleure offre d'emploi pour ce candidat ?")
+test = rag_chain.invoke("Parmi les offres ci-dessus, quelle est l'offre qui correspond le mieux au CV du candidat ?")
 print(test)
