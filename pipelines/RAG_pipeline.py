@@ -30,7 +30,7 @@ cv = pdf_loader(cv_file_path)
 # We load the langchain embedding model that is on hugging face
 huggingface_embeddings = HuggingFaceEmbeddings(
     model_name="sentence-transformers/all-MiniLM-L6-v2",
-    model_kwargs={'device':'cuda'},
+    model_kwargs={'device':'cpu'},
     # model_kwargs={'device':'cpu'} if you don't have a gpu
     encode_kwargs={'normalize_embeddings': True}
 )
@@ -41,7 +41,7 @@ try :
 except :
     vectorstore = db_loader.create_vector_DB("api_response.json",huggingface_embeddings)
 
-model_name = "meta-llama/Llama-2-7b-chat-hf"
+model_name = "meta-llama/Llama-3.2-3B-Instruct"
 loader = ModelLoader(model_name)
 pipeline = loader.load_pipeline()
 
@@ -51,14 +51,31 @@ pipeline = loader.load_pipeline()
 retriever = vectorstore.as_retriever(search_type="similarity", search_kwargs={"k": 2})
 
 template = """
-Tu es un expert du recrutement. Un candidat a fourni son CV suivant :
+Tu es un assistant en recrutement expert et ton objectif est d'aider un recruteur à identifier la meilleure offre d'emploi pour un candidat donné. Voici les informations fournies :
+
+1. **CV du candidat** : 
 {cv_text}
 
-Voici des offres d'emploi avec leur description et leur identifiant :
+2. **Offres d'emploi disponibles** : 
 {context}
 
+### Consigne :
+Analyse attentivement les informations du CV du candidat et les détails des offres d'emploi. Réponds à la question posée en suivant le format ci-dessous :
+
+### Format attendu :
+- **ID de l'offre recommandée** : [Identifiant de l'offre]
+- **Explication** : Explique pourquoi cette offre est adaptée au profil du candidat. Mets en avant les correspondances entre les compétences du candidat et les exigences du poste.
+- **URL de l'offre** (si disponible) : [URL]
+
+### Règles à suivre :
+- Si plusieurs offres conviennent, choisis celle qui correspond le mieux aux compétences principales du candidat.
+- Justifie ton choix de manière concise mais claire.
+- Si des informations sont manquantes pour justifier pleinement ton choix, mentionne-les.
+
+### Question : 
 {question}
 """
+
 
 prompt = PromptTemplate(input_variables=["cv_text", "context", "question"], template=template)
 llm = HuggingFacePipeline(pipeline=pipeline)
@@ -76,5 +93,5 @@ rag_chain = (
     | llm
 )
 
-test = rag_chain.invoke("Quelle est la meilleure offre d'emploi pour ce candidat ? Je souhaite que tu me donnes l'ID de l'offre, une explication de ton choix et si possible l'url de l'offre")
+test = rag_chain.invoke("Quelle est la meilleure offre pour ce candidat en se basant sur son cv ?")
 print(test)
