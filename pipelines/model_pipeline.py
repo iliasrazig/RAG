@@ -16,8 +16,9 @@ class ModelLoader:
             print(f"Loading model from local path: {self.model_path}")
             model = AutoModelForCausalLM.from_pretrained(self.model_path)
             tokenizer = AutoTokenizer.from_pretrained(self.model_path)
-        else:
             """
+            
+        else:
             print(f"Downloading model from HuggingFace: {self.model_name}")
             model = AutoModelForCausalLM.from_pretrained(self.model_name, torch_dtype=torch.float16, device_map="cuda")
             tokenizer = AutoTokenizer.from_pretrained(self.model_name)
