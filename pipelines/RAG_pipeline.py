@@ -67,6 +67,9 @@ Analyse attentivement les informations du CV du candidat et les détails des off
 - **Explication** : Explique pourquoi cette offre est adaptée au profil du candidat. Mets en avant les correspondances entre les compétences du candidat et les exigences du poste.
 - **URL de l'offre** (si disponible) : [URL]
 
+### Consigne supplémentaire :
+Commence toujours ta réponse par le mot "Réponse : ", suivi de la réponse complète, en excluant toute autre information.
+
 ### Règles à suivre :
 - Si plusieurs offres conviennent, choisis celle qui correspond le mieux aux compétences principales du candidat.
 - Justifie ton choix de manière concise mais claire.
@@ -74,6 +77,7 @@ Analyse attentivement les informations du CV du candidat et les détails des off
 
 ### Question : 
 {question}
+
 """
 
 
@@ -91,6 +95,7 @@ rag_chain = (
     }
     | prompt
     | llm
+    | StrOutputParser(output_key="Réponse")
 )
 
 test = rag_chain.invoke("Quelle est la meilleure offre pour ce candidat en se basant sur son cv ?")
