@@ -46,7 +46,8 @@ class ModelLoader:
             tokenizer=tokenizer,
             torch_dtype=torch.float16,
             device_map="cuda",
-            generation_config=generation_config)
+            generation_config=generation_config,
+            return_full_text=False)
 
         return pipeline
 
