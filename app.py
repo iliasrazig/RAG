@@ -28,17 +28,40 @@ torch.cuda.reset_peak_memory_stats()
 # Set up paths
 current_directory = os.path.dirname(os.path.abspath(__file__))
 data_directory = os.path.join(current_directory, "data")
-cv_file_path = os.path.join(data_directory, "CV RAZIG_Ilias_en.pdf")
+cv_file_path = os.path.join(data_directory, "CV.pdf")
 
-# Load the candidate's CV
-cv = pdf_loader(cv_file_path)
 
-# Load embeddings model
+# Streamlit UI
+st.title("Assistant Chatbot RAG pour la recherche d'emploi")
+st.write("Téléchargez votre CV et posez des questions sur les offres d'emploi en fonction du CV fourni.")
+
+uploaded_file = st.file_uploader("Téléchargez votre CV (PDF uniquement)")
+
+if uploaded_file is not None:
+    try:
+        # Load the candidate's CV
+        with open(cv_file_path, "wb") as f:
+            f.write(uploaded_file.getbuffer())
+
+        cv = pdf_loader(cv_file_path)
+        st.success("CV téléchargé avec succès !")
+        
+    except Exception as e:
+        st.error(f"Erreur lors du traitement du fichier : {e}")
+        cv_text = None
+else:
+    st.info("Veuillez téléverser un fichier pour continuer.")
+    cv_text = None
+
+
+# We load the langchain embedding model that is on hugging face
 huggingface_embeddings = HuggingFaceEmbeddings(
     model_name="sentence-transformers/all-MiniLM-L6-v2",
-    model_kwargs={'device': 'cpu'},  # Use 'cpu' if GPU is not available
+    model_kwargs={'device':'cpu'},
+    # model_kwargs={'device':'cpu'} if you don't have a gpu
     encode_kwargs={'normalize_embeddings': True}
 )
+
 
 # Load vector database
 db_loader = vector_DB("vector_DB", data_directory)
@@ -59,12 +82,27 @@ retriever = vectorstore.as_retriever(search_type="similarity", search_kwargs={"k
 
 # Define prompt template
 template = """
-Tu es un expert du recrutement. Un candidat a fourni son CV suivant :
+Tu es un assistant en recrutement expert et ton objectif est d'aider un recruteur à identifier la meilleure offre d'emploi pour un candidat donné. Voici les informations fournies :
+
+1. **CV du candidat** : 
 {cv_text}
 
-Voici des offres d'emploi avec leur description et leur identifiant :
+2. **Offres d'emploi disponibles** : 
 {context}
 
+### Consigne :
+Analyse attentivement les informations du CV du candidat et les détails des offres d'emploi. Réponds à la question posée.
+
+### Format attendu :
+- **ID de l'offre recommandée** : [Identifiant de l'offre]
+- **Explication** : Explique pourquoi cette offre est adaptée au profil du candidat. Mets en avant les correspondances entre les compétences du candidat et les exigences du poste.
+- **URL de l'offre** : [URL]
+
+### Règles à suivre :
+- Si plusieurs offres conviennent, choisis celle qui correspond le mieux aux compétences principales du candidat.
+- Justifie ton choix de manière concise mais claire.
+
+### Question : 
 {question}
 """
 
@@ -83,10 +121,6 @@ rag_chain = (
     | llm
 )
 
-# Streamlit UI
-st.title("Chatbot RAG pour le Recrutement")
-st.write("Posez des questions sur les offres d'emploi en fonction du CV fourni.")
-
 # Input question from the user
 user_question = st.text_input("Entrez votre question ici :")
 
@@ -94,6 +128,6 @@ if user_question:
     try:
         response = rag_chain.invoke(user_question)
         st.subheader("Réponse du chatbot :")
-        st.write(response)
+        st.write(response["answer"])
     except Exception as e:
         st.error(f"Une erreur est survenue : {e}")
