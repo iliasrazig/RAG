@@ -35,15 +35,17 @@ class ModelLoader:
         # Create the pipeline
 
         generation_config = GenerationConfig(
-        min_new_tokens=50,
-        max_new_tokens = 500,)
+        min_new_tokens=100,
+        max_new_tokens=2000,
+        repetition_penalty=1.2,
+        return_full_text = False)
 
         pipeline = transformers.pipeline(
             task="text-generation",
             model=model,
             tokenizer=tokenizer,
             torch_dtype=torch.float16,
-            device_map="cpu",
+            device_map="cuda",
             generation_config=generation_config)
 
         return pipeline
